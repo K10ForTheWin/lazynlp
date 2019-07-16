@@ -54,14 +54,10 @@ def get_english_alphabet():
     return set([chr(i) for i in range(ord('a'), ord('z') + 1)])
 
 def sort_files_by_size(files):
-    pairs = []
-    for file in files:
-        size = os.path.getsize(file)
-        pairs.append((size, file))
-    return sorted(pairs, reverse=True)
+    return sorted([os.path.getsize(f), f] for f in files], reverse=True)
 
 def get_filename(path):
-    return path[path.rfind('/') + 1:]
+    return os.path.basename(path)
 
 def get_raw_url(url):
     """ without http, https, www
