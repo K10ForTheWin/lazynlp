@@ -1,5 +1,6 @@
 import hashlib
 import os
+import string
 
 def dict_sorted_2_file(dictionary, file, reverse=True):
     with open(file, 'w') as out:
@@ -21,24 +22,27 @@ def is_positive_number(string, neg=False):
         return False
     if string.isdigit():
         return True
-    idx = string.find('.')
-    if idx > -1 and idx < len(string) -1:
-        if idx == 0 and neg:
+    
+    if "." in string:
+        if string.startswith(".") or string.endswith("."):
             return False
-        new_string = string[:idx] + string[idx+1:]
+        if len(string.split("."))>2:
+            return False
+        new_string = ''.join(string.split(".")
         if new_string.isdigit():
-            return True
-    rev = string[::-1]
-    idx = rev.find(',')
+                             return True
 
-    while idx > 0 and idx % 3 == 0 and rev[:idx].isdigit():
-        rev = rev[idx+1:]
-        idx = rev.find(',')
-
-    if idx == -1 and rev.isdigit():
-        return True
-    return False
-
+def is_comma_sep_numeric(num_str):
+	parts = num_str.split(",")
+	if parts[0]=='':
+		return False
+	else:
+		groups = parts[1:]
+		for group in groups:
+			if len(group)!=3:
+				return False
+		return True
+    
 def is_number(string):
     """ Return true if:
     integer
@@ -48,10 +52,14 @@ def is_number(string):
     """
     if string and string[0] == '-':
         return is_positive_number(string[1:], True)
+    
+    if "," in string:
+        return is_comma_sep_numeric(string)
+        
     return is_positive_number(string)
 
 def get_english_alphabet():
-    return set([chr(i) for i in range(ord('a'), ord('z') + 1)])
+    return set(list(string.ascii_lowercase))
 
 def sort_files_by_size(files):
     pairs = []
@@ -61,7 +69,7 @@ def sort_files_by_size(files):
     return sorted(pairs, reverse=True)
 
 def get_filename(path):
-    return path[path.rfind('/') + 1:]
+    return os.path.basename(path)
 
 def get_raw_url(url):
     """ without http, https, www
