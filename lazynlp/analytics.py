@@ -12,14 +12,10 @@ def build_ngram_from_tokens(tokens, n):
     """ Create a dictionary of n-gram from the list of tokens
     """
     count = {}
-    curr = tokens[:n]
-    count[' '.join(curr)] = 1
-    for token in tokens[n:]:
-        curr = curr[1:] + [token]
-        string = ' '.join(curr)
-        if not string in count:
-            count[string] = 0
-        count[string] += 1
+    ngrams=list(zip(x, x[1:]))
+    for ng in ngrams:
+        count[ng]=count.get(ng,0) +1
+
     return count
 
 def build_ngram(file, outfile=None, bf=None, gran='word', n=10, uncase=True, alphanumeric=True, interval=100000):
@@ -33,42 +29,40 @@ def build_ngram(file, outfile=None, bf=None, gran='word', n=10, uncase=True, alp
     if not gran in set(['word', 'char']):
         raise ValueError("gran has to be 'word' or 'char'")
     count = {}
-    f = open(file, 'r')
+  
     i = 1
-    line = f.readline()
+
     start = time.time()
-    while line:
-        line = line.strip()
-        if line:
-            if uncase:
-                line = line.lower()
-            
-            if gran == 'word':
-                if alphanumeric:
-                    line = remove_non_alphanumeric(line)
-            else:
-                line = remove_non_alpha(line)
-            line = collapse_white_spaces(line)
-            tokens = line.split()
-            line_count = build_ngram_from_tokens(tokens, n)
+    
+    with open(file, 'r') as f:
+        lines=f.readlines()
+        for line in lines:
+                    line = line.strip()
+                    if line and uncase:
+                            line = line.lower()
 
-            if outfile:
-                count.update()
-            
-            if not bf is None:
-                for key in line_count:
-                    bf.add(key)
+                        if gran == 'word'and alphanumeric:
+                                line = remove_non_alphanumeric(line)
+                        else:
+                            line = remove_non_alpha(line)
+                        line = collapse_white_spaces(line)
+                        tokens = line.split()
+                        line_count = build_ngram_from_tokens(tokens, n)
 
-            if interval > 0 and i % interval == 0:
-                print('Process line: {}. Time: {}'.format(i, time.time() - start))
-                start = time.time()
+                        if outfile:
+                            count.update()
 
-            i += 1
+                        if not bf is None:
+                            for key in line_count:
+                                bf.add(key)
 
-        line = f.readline()
+                        if interval > 0 and i % interval == 0:
+                            print('Process line: {}. Time: {}'.format(i, time.time() - start))
+                            start = time.time()
 
-    f.close()
-
+                        i += 1
+        
+  
     if outfile:
         outfold = outfile[:outfile.rfind('/')]
         os.makedirs(outfold, exist_ok=True)
@@ -128,6 +122,8 @@ def estimate_overlap_bf(bf, target_file, gran='word', n=8, header=0):
         line = f.readline()
 
     total, seen = 0, 0
+    
+    
     while line:
         line = line.strip().lower()
         
@@ -138,11 +134,10 @@ def estimate_overlap_bf(bf, target_file, gran='word', n=8, header=0):
         line = collapse_white_spaces(line)
         tokens = line.split()
         line_count = build_ngram_from_tokens(tokens, n)
+        
+        total = len(k for k in line_count)
+        seen = len(k for k in line_count if k in bf)
 
-        for key in line_count:
-            if key in bf:
-                seen += 1
-            total += 1
 
         line = f.readline()
     
@@ -155,13 +150,12 @@ def file_stats(file):
     """
     line_lengths, token_lengths = [], []
     with open(file, 'r') as f:
-        line = f.readline()
-        while line:
+        for line in file.readlines():
             tokens = line.split()
             line_lengths.append(len(tokens))
             line_token_lengths = [len(token) for token in tokens]
             token_lengths.append([len(tokens), sum(line_token_lengths) / len(tokens)])
-            line = f.readline()
+ 
     
     total_tokens = sum([pair[0] for pair in token_lengths])
     total_chars = sum([pair[0] * pair[1] for pair in token_lengths])
